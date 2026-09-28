@@ -222,15 +222,25 @@ async function updateScaleAtomically(mutator){
     syncUid();
     return datas;
   }
-  const result=await db.runTransaction(db.fsDb,async tx=>{
-    const ref=db.doc('app/escala');
+
+  const result=await runTransaction(db.fsDb,async tx=>{
+    const ref=doc(db.fsDb,'app','escala');
     const snap=await tx.get(ref);
-    const current=snap.exists ? (snap.data().datas||[]) : [];
-    const next=(Array.isArray(current)?current:[]).map(x=>normalizeData(x));
+
+    const current=snap.exists
+      ? (snap.data().datas||[])
+      : [];
+
+    const next=(Array.isArray(current)?current:[])
+      .map(x=>normalizeData(x));
+
     mutator(next);
+
     tx.set(ref,{datas:next});
+
     return next;
   });
+
   datas=result.map(normalizeData);
   syncUid();
   sharedReady=true;
